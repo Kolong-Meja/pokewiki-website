@@ -7,22 +7,22 @@ export default function PokemonTableSkeleton() {
         <thead className="text-xs sm:text-sm uppercase bg-soft-black dark:bg-table-header text-gray-50 dark:text-white">
           <tr>
             <th scope="col" className="px-6 py-3">
-              No.
+              <Skeleton className="h-4 w-12 mx-auto bg-slate-300" />
             </th>
             <th scope="col" className="px-6 py-3">
-              Name
+              <Skeleton className="h-4 w-12 mx-auto bg-slate-300" />
             </th>
             <th scope="col" className="px-6 py-3">
-              Image
+              <Skeleton className="h-4 w-12 mx-auto bg-slate-300" />
             </th>
             <th scope="col" className="px-6 py-3">
-              Generation
+              <Skeleton className="h-4 w-12 mx-auto bg-slate-300" />
             </th>
             <th scope="col" className="px-6 py-3">
-              Region
+              <Skeleton className="h-4 w-12 mx-auto bg-slate-300" />
             </th>
             <th scope="col" className="px-6 py-3">
-              Types
+              <Skeleton className="h-4 w-12 mx-auto bg-slate-300" />
             </th>
           </tr>
         </thead>

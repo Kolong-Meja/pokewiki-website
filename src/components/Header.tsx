@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import PokeWikiWhiteLogo from "../../../public/images/black_bg.png";
+import PokeWikiWhiteLogo from "../../public/images/black_bg.png";
 
 type HeaderProps = {
   fontStyle: string;

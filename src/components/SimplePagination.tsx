@@ -8,7 +8,11 @@ type PaginationProps = {
   limit: number;
 };
 
-export default function Pagination({ total, offset, limit }: PaginationProps) {
+export default function SimplePagination({
+  total,
+  offset,
+  limit,
+}: PaginationProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -16,7 +20,7 @@ export default function Pagination({ total, offset, limit }: PaginationProps) {
   const start = offset + 1;
   const end = total > 1 ? offset + limit : 1;
 
-  const createPageURL = (newOffset: number | string) => {
+  const createPageURL = (newOffset: number | string): string => {
     const params = new URLSearchParams(searchParams);
     params.set("offset", newOffset.toString());
     params.set("limit", limit.toString());
@@ -26,7 +30,7 @@ export default function Pagination({ total, offset, limit }: PaginationProps) {
 
   return (
     <div className="flex flex-col items-center">
-      <span className="text-sm text-gray-500 dark:text-gray-400">
+      <span className="text-sm text-gray-400 dark:text-gray-300">
         Showing{" "}
         <span className="font-semibold text-gray-50 dark:text-white">
           {start}
@@ -64,9 +68,9 @@ export default function Pagination({ total, offset, limit }: PaginationProps) {
           >
             <path
               stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
               d="M13 5H1m0 0 4 4M1 5l4-4"
             />
           </svg>
@@ -92,9 +96,9 @@ export default function Pagination({ total, offset, limit }: PaginationProps) {
           >
             <path
               stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
               d="M1 5h12m0 0L9 1m4 4L9 9"
             />
           </svg>
