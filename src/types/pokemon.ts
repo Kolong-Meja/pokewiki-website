@@ -1,10 +1,22 @@
-export type PokemonTypes = {
-  type: PokemonType;
+export type PokemonResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Pokemon[];
 };
 
-type PokemonType = {
+export type Pokemon = {
   name: string;
   url: string;
+  detail: PokemonDetail | null;
+};
+
+type PokemonDetail = {
+  id: number;
+  stats: PokemonStats[];
+  types: PokemonTypes[];
+  species: PokemonSpecies;
+  sprites: PokemonSprites;
 };
 
 type PokemonStats = {
@@ -13,6 +25,15 @@ type PokemonStats = {
 };
 
 type PokemonDetailStats = {
+  name: string;
+  url: string;
+};
+
+export type PokemonTypes = {
+  type: PokemonType;
+};
+
+type PokemonType = {
   name: string;
   url: string;
 };
@@ -54,26 +75,4 @@ type PokemonSprites = {
   back_female: string | null;
   front_default: string | null;
   front_female: string | null;
-};
-
-type PokemonDetail = {
-  id: number;
-  stats: PokemonStats[];
-  types: PokemonTypes[];
-  species: PokemonSpecies;
-  sprites: PokemonSprites;
-};
-
-export type Pokemon = {
-  name: string;
-  url: string;
-  detail: PokemonDetail | null;
-};
-
-// FETCH ALL POKEMONS RESPONSE.
-export type PokemonResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Pokemon[];
 };

@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Pokemon, PokemonResponse } from "@/types/pokemon";
-import SearchBar from "./SearchBar";
-import PokemonTable from "./PokemonTable";
-import SimplePagination from "./SimplePagination";
-import SortButton from "./SortButton";
+import SearchBar from "../SearchBar";
+import PokemonTable from "../tables/PokemonTable";
+import SortButton from "../buttons/SortButton";
+import SimplePagination from "../SimplePagination";
 
 async function sortPokemons(
   pokemons: Pokemon[],
@@ -219,7 +219,7 @@ async function getOnePokemonWithDetail(target: Pokemon): Promise<Pokemon> {
   return result;
 }
 
-export default function Content() {
+export default function PokemonContent() {
   const searchParams = useSearchParams();
   const sort = searchParams.get("sort") || "";
   const query = searchParams.get("q")?.toLowerCase() || "";

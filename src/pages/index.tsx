@@ -2,8 +2,8 @@ import { Hanken_Grotesk } from "next/font/google";
 import Head from "next/head";
 
 import Header from "@/components/Header";
-import Content from "@/components/Content";
 import Footer from "@/components/Footer";
+import PokemonContent from "@/components/contents/PokemonContent";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -21,7 +21,7 @@ export default function Home() {
       <Header fontStyle={hankenGrotesk.className} />
 
       {/* CONTENT */}
-      <Content />
+      <PokemonContent />
 
       {/* FOOTER */}
       <Footer />

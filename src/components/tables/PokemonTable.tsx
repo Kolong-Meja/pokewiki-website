@@ -1,6 +1,6 @@
 import { capitalize, renewal } from "@/utils/string";
 import { PokemonResponse, PokemonTypes } from "@/types/pokemon";
-import PokemonTableSkeleton from "../components/skeletons/PokemonTableSkeleton";
+import PokemonTableSkeleton from "../skeletons/PokemonTableSkeleton";
 import Image from "next/image";
 import { JSX } from "react";
 
@@ -9,7 +9,15 @@ type PokemonTableProps = {
   pokemons: PokemonResponse;
 };
 
-function pokemonTypeBadge(types: PokemonTypes[]): JSX.Element {
+type StatusCellProps = {
+  baseStat: number;
+};
+
+type PokemonTypeBadgeProps = {
+  types: PokemonTypes[];
+};
+
+function PokemonTypeBadge({ types }: PokemonTypeBadgeProps): JSX.Element {
   return (
     <div className="flex flex-nowrap gap-1">
       {types.map((t) => {
@@ -176,7 +184,7 @@ function pokemonTypeBadge(types: PokemonTypes[]): JSX.Element {
   );
 }
 
-function StatusCell({ baseStat }: { baseStat: number }) {
+function StatusCell({ baseStat }: StatusCellProps): JSX.Element {
   let colorClass = "";
 
   switch (true) {
@@ -307,7 +315,9 @@ export default function PokemonTable({ offset, pokemons }: PokemonTableProps) {
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex flex-row space-x-2 justify-center items-center">
-                  {pokemonTypeBadge(pokemon.detail?.types as PokemonTypes[])}
+                  <PokemonTypeBadge
+                    types={pokemon.detail?.types as PokemonTypes[]}
+                  />
                 </div>
               </td>
 
@@ -337,7 +347,7 @@ export default function PokemonTable({ offset, pokemons }: PokemonTableProps) {
                 />
               </td>
               <td className="px-6 py-4">
-              <StatusCell
+                <StatusCell
                   baseStat={pokemon.detail?.stats[5].base_stat as number}
                 />
               </td>
