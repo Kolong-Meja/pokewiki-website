@@ -10,7 +10,7 @@ export default function Header({ fontStyle }: HeaderProps) {
   return (
     <header
       id="header"
-      className="h-full max-h-full w-full max-w-full bg-black dark:bg-soft-black transition-colors duration-300 ease-in-out"
+      className="h-full max-h-full w-full max-w-full pt-12 bg-black dark:bg-soft-black transition-colors duration-300 ease-in-out"
     >
       <div className="container mx-auto">
         <div className="flex flex-col space-y-12 items-center px-8 py-10 sm:px-9 sm:py-11 md:px-10 md:py-12">

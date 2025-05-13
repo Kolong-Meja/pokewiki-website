@@ -11,8 +11,9 @@ export type Pokemon = {
   detail: PokemonDetail | null;
 };
 
-type PokemonDetail = {
+export type PokemonDetail = {
   id: number;
+  name: string;
   stats: PokemonStats[];
   types: PokemonTypes[];
   species: PokemonSpecies;

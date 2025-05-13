@@ -16,7 +16,7 @@ export default function SimplePagination({
   const { replace } = useRouter();
 
   const start = offset + 1;
-  const end = total > 1 ? offset + limit : 1;
+  const end = () => Math.min(offset + limit, total || 1);
 
   const createPageURL = (newOffset: number | string): string => {
     const params = new URLSearchParams(searchParams);
@@ -27,7 +27,7 @@ export default function SimplePagination({
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center transition-colors duration-300 ease-in-out">
       <span className="text-sm text-gray-400 dark:text-gray-300">
         Showing{" "}
         <span className="font-semibold text-gray-50 dark:text-white">
@@ -35,7 +35,7 @@ export default function SimplePagination({
         </span>{" "}
         to{" "}
         <span className="font-semibold text-gray-50 dark:text-white">
-          {end}
+          {end()}
         </span>{" "}
         of{" "}
         <span className="font-semibold text-gray-50 dark:text-white">

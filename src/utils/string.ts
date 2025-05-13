@@ -7,3 +7,13 @@ export const renewal = <T extends string>(s: T) => {
 
   return result;
 };
+
+export const renewalInTitleCase = <T extends string>(s: T) => {
+  const result = s
+    .toLowerCase()
+    .split("-")
+    .map((word) => {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
+  return result.join(" ");
+};

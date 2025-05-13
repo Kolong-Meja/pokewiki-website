@@ -28,7 +28,7 @@ export default function SearchBar({ placeholder }: SearchProps) {
   }, 300);
 
   return (
-    <div className="w-52 max-w-sm sm:w-81 sm:max-w-lg md:w-full md:max-w-xl relative">
+    <div className="w-64 max-w-sm sm:w-72 sm:max-w-lg md:w-81 md:max-w-xl relative">
       <Search
         className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-400 dark:text-zinc-500 w-5 h-5
       "

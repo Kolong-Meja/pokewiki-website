@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { Pokemon, PokemonResponse } from "@/types/pokemon";
+import { Pokemon, PokemonDetail, PokemonResponse } from "@/types/pokemon";
 import SearchBar from "../SearchBar";
 import PokemonTable from "../tables/PokemonTable";
 import SortButton from "../buttons/SortButton";
 import SimplePagination from "../SimplePagination";
+import CategoryButton from "../buttons/CategoryButton";
 
 async function sortPokemons(
   pokemons: Pokemon[],
@@ -140,24 +141,27 @@ async function getAllSuggestedPokemons(
 }
 
 async function getOnePokemonByNameWithDetail(name: string): Promise<Pokemon> {
-  const pokemon = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`).then(
-    (res) => res.json()
+  const pokemonDetail: PokemonDetail = await fetch(
+    `https://pokeapi.co/api/v2/pokemon/${name}`
+  ).then((res) => res.json());
+  const species = await fetch(pokemonDetail.species.url).then((res) =>
+    res.json()
   );
-  const species = await fetch(pokemon.species.url).then((res) => res.json());
   const generation = await fetch(species.generation.url).then((res) =>
     res.json()
   );
 
   const result: Pokemon = {
-    name: pokemon.name,
-    url: `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`,
+    name: pokemonDetail.name,
+    url: `https://pokeapi.co/api/v2/pokemon/${pokemonDetail.name}`,
     detail: {
-      id: pokemon.id,
-      stats: pokemon.stats,
-      types: pokemon.types,
+      id: pokemonDetail.id,
+      name: pokemonDetail.name,
+      stats: pokemonDetail.stats,
+      types: pokemonDetail.types,
       species: {
-        name: pokemon.species.name,
-        url: pokemon.species.url,
+        name: pokemonDetail.species.name,
+        url: pokemonDetail.species.url,
         detail: {
           color: species.color,
           generation: {
@@ -173,7 +177,7 @@ async function getOnePokemonByNameWithDetail(name: string): Promise<Pokemon> {
           },
         },
       },
-      sprites: pokemon.sprites,
+      sprites: pokemonDetail.sprites,
     },
   };
 
@@ -181,22 +185,27 @@ async function getOnePokemonByNameWithDetail(name: string): Promise<Pokemon> {
 }
 
 async function getOnePokemonWithDetail(target: Pokemon): Promise<Pokemon> {
-  const pokemon = await fetch(target.url).then((res) => res.json());
-  const species = await fetch(pokemon.species.url).then((res) => res.json());
+  const pokemonDetail: PokemonDetail = await fetch(target.url).then((res) =>
+    res.json()
+  );
+  const species = await fetch(pokemonDetail.species.url).then((res) =>
+    res.json()
+  );
   const generation = await fetch(species.generation.url).then((res) =>
     res.json()
   );
 
   const result: Pokemon = {
-    name: pokemon.name,
-    url: pokemon.url,
+    name: pokemonDetail.name,
+    url: target.url,
     detail: {
-      id: pokemon.id,
-      stats: pokemon.stats,
-      types: pokemon.types,
+      id: pokemonDetail.id,
+      name: pokemonDetail.name,
+      stats: pokemonDetail.stats,
+      types: pokemonDetail.types,
       species: {
-        name: pokemon.species.name,
-        url: pokemon.species.url,
+        name: pokemonDetail.species.name,
+        url: pokemonDetail.species.url,
         detail: {
           color: species.color,
           generation: {
@@ -212,7 +221,7 @@ async function getOnePokemonWithDetail(target: Pokemon): Promise<Pokemon> {
           },
         },
       },
-      sprites: pokemon.sprites,
+      sprites: pokemonDetail.sprites,
     },
   };
 
@@ -292,12 +301,17 @@ export default function PokemonContent() {
     >
       <div className="container mx-auto">
         <div className="flex flex-col space-y-8 px-4 py-8">
-          <div className="flex flex-row space-x-4 items-center">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0 items-center">
             {/* SEARCH BAR */}
             <SearchBar placeholder="Search pokemon..." />
 
-            {/* SORT BUTTON */}
-            <SortButton />
+            <div className="flex flex-row space-x-4 items-center">
+              {/* SORT BUTTON */}
+              <SortButton />
+
+              {/* CATEGORY BUTTON */}
+              <CategoryButton />
+            </div>
           </div>
           {/* TABLE */}
           <PokemonTable
