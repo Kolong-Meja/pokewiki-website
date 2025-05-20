@@ -1,4 +1,4 @@
-import { capitalize, renewal } from "@/utils/string";
+import { capitalize, renewal, renewalInTitleCase } from "@/utils/string";
 import { PokemonResponse, PokemonTypes } from "@/types/pokemon";
 import PokemonTableSkeleton from "../skeletons/PokemonTableSkeleton";
 import Image from "next/image";
@@ -294,7 +294,7 @@ export default function PokemonTable({ offset, pokemons }: PokemonTableProps) {
                 {offset + index + 1}.
               </th>
               <td className="px-6 py-4 whitespace-nowrap">
-                {capitalize(pokemon.name)}
+                {renewalInTitleCase(pokemon.name)}
               </td>
               <td className="px-6 py-4 min-w-[100px] whitespace-nowrap">
                 <div className="flex flex-row space-x-2 justify-center items-center">

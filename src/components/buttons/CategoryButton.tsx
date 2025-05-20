@@ -64,7 +64,7 @@ export default function CategoryButton() {
       {dropdownOpen && (
         <div
           ref={dropdownMenuRef}
-          className="origin-top-right absolute right-0 mt-2 w-32 rounded-md bg-soft-dark border border-zinc-700 z-20
+          className="origin-top-right absolute right-0 mt-2 w-28 rounded-md bg-soft-dark border border-zinc-700 z-20
           "
         >
           <div

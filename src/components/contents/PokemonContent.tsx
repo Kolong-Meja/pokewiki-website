@@ -10,6 +10,38 @@ import SortButton from "../buttons/SortButton";
 import SimplePagination from "../SimplePagination";
 import CategoryButton from "../buttons/CategoryButton";
 
+async function getPokemons(): Promise<PokemonResponse> {
+  let pokemons;
+  const cachedPokemons = localStorage.getItem("pokemons");
+
+  if (!cachedPokemons) {
+    const response = await fetch(
+      "https://pokeapi.co/api/v2/pokemon?limit=1302"
+    );
+    if (!response.ok) throw new Error("Failed to fetch pokemons.");
+
+    pokemons = await response.json();
+    localStorage.setItem("pokemons", JSON.stringify(pokemons));
+  } else {
+    pokemons = JSON.parse(cachedPokemons);
+  }
+
+  return pokemons;
+}
+
+async function getAllPokemons(
+  offset: number,
+  limit: number
+): Promise<PokemonResponse> {
+  const response = await fetch(
+    `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`
+  );
+  if (!response.ok) throw new Error("Failed to fetch pokemons.");
+  const data = await response.json();
+
+  return data;
+}
+
 async function sortPokemons(
   pokemons: Pokemon[],
   sortValue: string
@@ -27,69 +59,42 @@ async function sortPokemons(
       return [...pokemons];
     default:
       return [...pokemons];
-
-    // case "region":
-    //   return [...pokemons].sort((a, b) => {
-    //     const initialRegion = a.detail?.species.detail?.generation.detail
-    //       ?.main_region.name as string;
-    //     const nextRegion = b.detail?.species.detail?.generation.detail
-    //       ?.main_region.name as string;
-    //     return initialRegion?.localeCompare(nextRegion, "en", {
-    //       sensitivity: "base",
-    //     });
-    //   });
-    // case "powerful":
-    //   return [...pokemons].sort((a, b) => {
-    //     const initial =
-    //       a.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-    //     const last =
-    //       b.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-    //     return last - initial;
-    //   });
-    // case "weakest":
-    //   return [...pokemons].sort((a, b) => {
-    //     const initial =
-    //       a.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-    //     const last =
-    //       b.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-    //     return initial - last;
-    //   });
   }
 }
 
-async function getAllPokemons(
-  offset: number,
-  limit: number
-): Promise<PokemonResponse> {
-  const response = await fetch(
-    `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`
-  );
-  if (!response.ok) throw new Error("Failed to fetch pokemons.");
-  const data = await response.json();
-
-  return data;
-}
+// case "region":
+//   return [...pokemons].sort((a, b) => {
+//     const initialRegion = a.detail?.species.detail?.generation.detail
+//       ?.main_region.name as string;
+//     const nextRegion = b.detail?.species.detail?.generation.detail
+//       ?.main_region.name as string;
+//     return initialRegion?.localeCompare(nextRegion, "en", {
+//       sensitivity: "base",
+//     });
+//   });
+// case "powerful":
+//   return [...pokemons].sort((a, b) => {
+//     const initial =
+//       a.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
+//     const last =
+//       b.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
+//     return last - initial;
+//   });
+// case "weakest":
+//   return [...pokemons].sort((a, b) => {
+//     const initial =
+//       a.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
+//     const last =
+//       b.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
+//     return initial - last;
+//   });
 
 async function getAllSortedPokemons(
   sortValue: string,
   offset: number,
   limit: number
 ): Promise<PokemonResponse> {
-  let pokemons;
-  const cachedPokemons = localStorage.getItem("pokemons");
-
-  if (!cachedPokemons) {
-    const response = await fetch(
-      "https://pokeapi.co/api/v2/pokemon?limit=1302"
-    );
-    if (!response.ok) throw new Error("Failed to fetch pokemons.");
-
-    pokemons = await response.json();
-    localStorage.setItem("pokemons", JSON.stringify(pokemons));
-  } else {
-    pokemons = JSON.parse(cachedPokemons);
-  }
-
+  const pokemons = await getPokemons();
   const sorted = await sortPokemons(pokemons.results, sortValue);
   const results = sorted.slice(offset, offset + limit);
   const response: PokemonResponse = {
@@ -104,24 +109,9 @@ async function getAllSortedPokemons(
 
 async function getAllSuggestedPokemons(
   query: string,
-  maxSuggestions: number = 20
+  maxSuggestions: number = 10
 ): Promise<PokemonResponse> {
-  let pokemons;
-  const cachedPokemons = localStorage.getItem("pokemons");
-
-  if (!cachedPokemons) {
-    const response = await fetch(
-      "https://pokeapi.co/api/v2/pokemon?limit=1302"
-    );
-
-    if (!response.ok) throw new Error("Failed to fetch pokemons.");
-
-    pokemons = await response.json();
-    localStorage.setItem("pokemons", JSON.stringify(pokemons));
-  } else {
-    pokemons = JSON.parse(cachedPokemons);
-  }
-
+  const pokemons = await getPokemons();
   const pokemonNames = pokemons.results.map((pokemon: Pokemon) => pokemon.name);
   const matches = pokemonNames
     .filter((name: string) => name.toLowerCase().includes(query.toLowerCase()))
@@ -245,7 +235,7 @@ export default function PokemonContent() {
         setError("");
 
         const data = query
-          ? await getAllSuggestedPokemons(query, limit)
+          ? await getAllSuggestedPokemons(query)
           : sort
           ? await getAllSortedPokemons(sort, offset, limit)
           : await getAllPokemons(offset, limit);

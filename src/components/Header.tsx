@@ -1,12 +1,15 @@
 import Image from "next/image";
 
 import PokeWikiWhiteLogo from "../../public/images/black_bg.png";
+import { useTranslations } from "next-intl";
 
 type HeaderProps = {
   fontStyle: string;
 };
 
 export default function Header({ fontStyle }: HeaderProps) {
+  const t = useTranslations("Header");
+
   return (
     <header
       id="header"
@@ -21,15 +24,13 @@ export default function Header({ fontStyle }: HeaderProps) {
             height={200}
           />
           <p
-            className={`${fontStyle} px-4 sm:px-5 md:px-6 font-normal text-center text-base md:text-lg lg:text-xl text-gray-50 dark:text-white`}
+            className={`${fontStyle} px-6 sm:px-8 md:px-10 font-normal text-center text-base md:text-lg lg:text-xl text-gray-50 dark:text-white`}
           >
-            Welcome to PokeWiki. This is a side project I developed using
-            Next.js.{" "}
-            <span className="font-bold">
-              This website does not take any profit from the Pokemon trademark.
-            </span>{" "}
-            This website was built with the aim of providing information about
-            the fictional monsters or animals from Pokemon itself.
+            <span className="text-yellow-500 font-bold uppercase">[NOTE] </span>
+            <span className="font-bold underline underline-offset-4">
+              {t("desc_bold")}
+            </span>
+            <span> {t("desc")}</span>
           </p>
         </div>
       </div>

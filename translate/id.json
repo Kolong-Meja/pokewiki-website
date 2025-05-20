@@ -1,0 +1,9 @@
+{
+  "Header": {
+    "desc_bold": "Situs web ini tidak mengambil keuntungan apa pun dari merek dagang Pokemon",
+    "desc": "dan dibangun dengan tujuan memberikan informasi tentang monster atau hewan fiksi dari Pokemon itu sendiri."
+  },
+  "LanguageSwitcher": {
+    "language": "{locale, select, en {English} id {Indonesia} other {Unknown}}"
+  }
+}

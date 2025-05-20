@@ -1,5 +1,6 @@
 import { Hanken_Grotesk } from "next/font/google";
 import Head from "next/head";
+import { GetStaticPropsContext } from "next";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -17,6 +18,15 @@ export const metadata: Metadata = {
   description:
     "PokeWiki is a wiki website for finding information about Pokemon.",
 };
+
+export async function getStaticProps({locale}: GetStaticPropsContext) {
+  return {
+    props: {
+      messages: (await import(`../../translate/${locale}.json`))
+        .default,
+    },
+  };
+}
 
 export default function Home() {
   return (

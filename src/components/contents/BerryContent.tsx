@@ -12,24 +12,21 @@ import BerryTable from "../tables/BerryTable";
 import SimplePagination from "../SimplePagination";
 import SortButton from "../buttons/SortButton";
 
-async function sortBerries(
-  berries: Berry[],
-  sortValue: string
-): Promise<Berry[]> {
-  switch (sortValue) {
-    case "asc":
-      return [...berries].sort((a, b) =>
-        a.name.localeCompare(b.name, "en", { sensitivity: "base" })
-      );
-    case "desc":
-      return [...berries].sort((a, b) =>
-        b.name.localeCompare(a.name, "en", { sensitivity: "base" })
-      );
-    case "default":
-      return [...berries];
-    default:
-      return [...berries];
+async function getBerries(): Promise<BerryResponse> {
+  let berries;
+  const cachedBerries = localStorage.getItem("berries");
+
+  if (!cachedBerries) {
+    const response = await fetch("https://pokeapi.co/api/v2/berry?limit=64");
+    if (!response.ok) throw new Error("Failed to fetch berries.");
+
+    berries = await response.json();
+    localStorage.setItem("berries", JSON.stringify(berries));
+  } else {
+    berries = JSON.parse(cachedBerries);
   }
+
+  return berries;
 }
 
 async function getAllBerries(
@@ -45,24 +42,32 @@ async function getAllBerries(
   return data;
 }
 
+async function sortBerries(
+  berries: Berry[],
+  sortValue: string
+): Promise<Berry[]> {
+  switch (sortValue) {
+    case "asc":
+      return [...berries].sort((i, l) =>
+        i.name.localeCompare(l.name, "en", { sensitivity: "base" })
+      );
+    case "desc":
+      return [...berries].sort((i, l) =>
+        l.name.localeCompare(i.name, "en", { sensitivity: "base" })
+      );
+    case "default":
+      return [...berries];
+    default:
+      return [...berries];
+  }
+}
+
 async function getAllSortedBerries(
   sortValue: string,
   offset: number,
   limit: number
 ): Promise<BerryResponse> {
-  let berries;
-  const cachedBerries = localStorage.getItem("berries");
-
-  if (!cachedBerries) {
-    const response = await fetch("https://pokeapi.co/api/v2/berry?limit=64");
-    if (!response.ok) throw new Error("Failed to fetch berries.");
-
-    berries = await response.json();
-    localStorage.setItem("berries", JSON.stringify(berries));
-  } else {
-    berries = JSON.parse(cachedBerries);
-  }
-
+  const berries = await getBerries();
   const sorted = await sortBerries(berries.results, sortValue);
   const results = sorted.slice(offset, offset + limit);
   const response: BerryResponse = {
@@ -77,22 +82,9 @@ async function getAllSortedBerries(
 
 async function getAllSuggestedBerries(
   query: string,
-  maxSuggestions: number = 20
+  maxSuggestions: number = 10
 ): Promise<BerryResponse> {
-  let berries;
-  const cachedBerries = localStorage.getItem("berries");
-
-  if (!cachedBerries) {
-    const response = await fetch("https://pokeapi.co/api/v2/berry?limit=64");
-
-    if (!response.ok) throw new Error("Failed to fetch berries.");
-
-    berries = await response.json();
-    localStorage.setItem("berries", JSON.stringify(berries));
-  } else {
-    berries = JSON.parse(cachedBerries);
-  }
-
+  const berries = await getBerries();
   const berryNames = berries.results.map((berry: Berry) => berry.name);
   const matches = berryNames
     .filter((name: string) => name.toLowerCase().includes(query.toLowerCase()))
@@ -210,7 +202,7 @@ export default function BerryContent() {
         setError("");
 
         const data = query
-          ? await getAllSuggestedBerries(query, limit)
+          ? await getAllSuggestedBerries(query)
           : sort
           ? await getAllSortedBerries(sort, offset, limit)
           : await getAllBerries(offset, limit);

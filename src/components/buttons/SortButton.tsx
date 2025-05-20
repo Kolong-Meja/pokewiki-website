@@ -65,7 +65,7 @@ export default function SortButton() {
       {dropdownOpen && (
         <div
           ref={dropdownMenuRef}
-          className="origin-top-right absolute right-0 mt-2 w-48 rounded-md bg-soft-dark border border-zinc-700 z-20
+          className="origin-top-right absolute right-0 mt-2 w-44 rounded-md bg-soft-dark border border-zinc-700 z-20
           "
         >
           <div

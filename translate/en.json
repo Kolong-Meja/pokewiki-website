@@ -1,0 +1,9 @@
+{
+  "Header": {
+    "desc_bold": "This website does not take any profit from the Pokemon trademark",
+    "desc": "and was built with the aim of providing information about the fictional monsters or animals from Pokemon itself."
+  },
+  "LanguageSwitcher": {
+    "language": "{locale, select, en {English} id {Indonesia} other {Unknown}}"
+  }
+}
