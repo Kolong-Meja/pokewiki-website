@@ -20,6 +20,11 @@ export type PokemonDetail = {
   sprites: PokemonSprites;
 };
 
+export type EnrichedPokemon = Pokemon & {
+  region: string | null;
+  generation: string | null;
+};
+
 type PokemonStats = {
   base_stat: number;
   stat: PokemonDetailStats;
