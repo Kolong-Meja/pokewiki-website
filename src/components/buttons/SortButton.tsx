@@ -95,20 +95,6 @@ export default function SortButton() {
             >
               [ Z-A ] Sort by Name
             </a>
-            <a
-              onClick={() => sortData("weakest")}
-              className="flex rounded-md px-3 py-2 text-sm text-gray-50 dark:text-white hover:bg-zinc-800 active:bg-zinc-600 transition-colors duration-300 ease-in-out cursor-pointer"
-              role="menuitem"
-            >
-              Sort by Weakest
-            </a>
-            <a
-              onClick={() => sortData("powerful")}
-              className="flex rounded-md px-3 py-2 text-sm text-gray-50 dark:text-white hover:bg-zinc-800 active:bg-zinc-600 transition-colors duration-300 ease-in-out cursor-pointer"
-              role="menuitem"
-            >
-              Sort by Powerful
-            </a>
           </div>
         </div>
       )}

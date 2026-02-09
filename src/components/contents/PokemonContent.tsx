@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { Pokemon, PokemonDetail, PokemonResponse } from "@/types/pokemon";
+import {
+  Pokemon,
+  PokemonDetail,
+  PokemonResponse,
+  PokemonStats,
+  PokemonWithTotalStats,
+} from "@/types/pokemon";
 import SearchBar from "../SearchBar";
 import PokemonTable from "../tables/PokemonTable";
 import SortButton from "../buttons/SortButton";
@@ -43,9 +49,9 @@ async function getAllPokemons(
 }
 
 async function sortPokemons(
-  pokemons: Pokemon[],
+  pokemons: PokemonWithTotalStats[],
   sortValue: string
-): Promise<Pokemon[]> {
+): Promise<PokemonWithTotalStats[]> {
   switch (sortValue) {
     case "asc":
       return [...pokemons].sort((a, b) =>
@@ -54,6 +60,14 @@ async function sortPokemons(
     case "desc":
       return [...pokemons].sort((a, b) =>
         b.name.localeCompare(a.name, "en", { sensitivity: "base" })
+      );
+    case "powerful":
+      return [...pokemons].sort(
+        (a, b) => (b.totalStats ?? 0) - (a.totalStats ?? 0)
+      );
+    case "weakest":
+      return [...pokemons].sort(
+        (a, b) => (a.totalStats ?? 0) - (b.totalStats ?? 0)
       );
     case "default":
       return [...pokemons];
@@ -71,22 +85,6 @@ async function sortPokemons(
 //     return initialRegion?.localeCompare(nextRegion, "en", {
 //       sensitivity: "base",
 //     });
-//   });
-// case "powerful":
-//   return [...pokemons].sort((a, b) => {
-//     const initial =
-//       a.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-//     const last =
-//       b.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-//     return last - initial;
-//   });
-// case "weakest":
-//   return [...pokemons].sort((a, b) => {
-//     const initial =
-//       a.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-//     const last =
-//       b.detail?.stats.reduce((sum, stat) => sum + stat.base_stat, 0) ?? 0;
-//     return initial - last;
 //   });
 
 async function getAllSortedPokemons(
@@ -130,7 +128,7 @@ async function getAllSuggestedPokemons(
   return response;
 }
 
-async function getOnePokemonByNameWithDetail(name: string): Promise<Pokemon> {
+async function getOnePokemonByNameWithDetail(name: string): Promise<PokemonWithTotalStats> {
   const pokemonDetail: PokemonDetail = await fetch(
     `https://pokeapi.co/api/v2/pokemon/${name}`
   ).then((res) => res.json());
@@ -140,10 +138,15 @@ async function getOnePokemonByNameWithDetail(name: string): Promise<Pokemon> {
   const generation = await fetch(species.generation.url).then((res) =>
     res.json()
   );
+  const totalStat = pokemonDetail.stats.reduce(
+    (sum: number, stat: PokemonStats) => sum + stat.base_stat,
+    0
+  );
 
-  const result: Pokemon = {
+  return {
     name: pokemonDetail.name,
     url: `https://pokeapi.co/api/v2/pokemon/${pokemonDetail.name}`,
+    totalStats: totalStat,
     detail: {
       id: pokemonDetail.id,
       name: pokemonDetail.name,
@@ -170,11 +173,11 @@ async function getOnePokemonByNameWithDetail(name: string): Promise<Pokemon> {
       sprites: pokemonDetail.sprites,
     },
   };
-
-  return result;
 }
 
-async function getOnePokemonWithDetail(target: Pokemon): Promise<Pokemon> {
+async function getOnePokemonWithDetail(
+  target: Pokemon
+): Promise<PokemonWithTotalStats> {
   const pokemonDetail: PokemonDetail = await fetch(target.url).then((res) =>
     res.json()
   );
@@ -184,10 +187,15 @@ async function getOnePokemonWithDetail(target: Pokemon): Promise<Pokemon> {
   const generation = await fetch(species.generation.url).then((res) =>
     res.json()
   );
+  const totalStat = pokemonDetail.stats.reduce(
+    (sum: number, stat: PokemonStats) => sum + stat.base_stat,
+    0
+  );
 
-  const result: Pokemon = {
+  return {
     name: pokemonDetail.name,
     url: target.url,
+    totalStats: totalStat,
     detail: {
       id: pokemonDetail.id,
       name: pokemonDetail.name,
@@ -214,8 +222,6 @@ async function getOnePokemonWithDetail(target: Pokemon): Promise<Pokemon> {
       sprites: pokemonDetail.sprites,
     },
   };
-
-  return result;
 }
 
 export default function PokemonContent() {

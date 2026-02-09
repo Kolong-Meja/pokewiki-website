@@ -296,7 +296,7 @@ export default function PokemonTable({ offset, pokemons }: PokemonTableProps) {
               <td className="px-6 py-4 whitespace-nowrap">
                 {renewalInTitleCase(pokemon.name)}
               </td>
-              <td className="px-6 py-4 min-w-[100px] whitespace-nowrap">
+              <td className="px-6 py-4 min-w-25 whitespace-nowrap">
                 <div className="flex flex-row space-x-2 justify-center items-center">
                   {pokemon.detail?.sprites.front_default ? (
                     <Image
