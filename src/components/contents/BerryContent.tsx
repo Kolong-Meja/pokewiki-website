@@ -3,7 +3,15 @@ import {
   BerryDetail,
   BerryItemDetail,
   BerryResponse,
+  BerrySortInfo,
 } from "@/types/berry";
+import { SortOption } from "@/types/sort";
+import {
+  extractIdFromUrl,
+  fetchInBatches,
+  getCached,
+  setCached,
+} from "@/utils/sort";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import SearchBar from "../SearchBar";
@@ -11,6 +19,20 @@ import CategoryButton from "../buttons/CategoryButton";
 import BerryTable from "../tables/BerryTable";
 import SimplePagination from "../SimplePagination";
 import SortButton from "../buttons/SortButton";
+
+const BERRY_SORT_OPTIONS: SortOption[] = [
+  { value: "default", label: "Sort by Default" },
+  { value: "asc", label: "[ A-Z ] Sort by Name" },
+  { value: "desc", label: "[ Z-A ] Sort by Name" },
+  { value: "id-asc", label: "[ Low-High ] Sort by ID" },
+  { value: "id-desc", label: "[ High-Low ] Sort by ID" },
+  { value: "growth-asc", label: "[ Fastest ] Sort by Growth Time" },
+  { value: "growth-desc", label: "[ Slowest ] Sort by Growth Time" },
+  { value: "size-asc", label: "[ Smallest ] Sort by Size" },
+  { value: "size-desc", label: "[ Largest ] Sort by Size" },
+  { value: "firmness-asc", label: "[ Softest ] Sort by Firmness" },
+  { value: "firmness-desc", label: "[ Hardest ] Sort by Firmness" },
+];
 
 async function getBerries(): Promise<BerryResponse> {
   let berries;
@@ -31,10 +53,10 @@ async function getBerries(): Promise<BerryResponse> {
 
 async function getAllBerries(
   offset: number,
-  limit: number
+  limit: number,
 ): Promise<BerryResponse> {
   const response = await fetch(
-    `https://pokeapi.co/api/v2/berry?offset=${offset}&limit=${limit}`
+    `https://pokeapi.co/api/v2/berry?offset=${offset}&limit=${limit}`,
   );
   if (!response.ok) throw new Error("Failed to fetch berries.");
   const data = await response.json();
@@ -42,21 +64,96 @@ async function getAllBerries(
   return data;
 }
 
+async function getBerrySortInfoMap(): Promise<Record<string, BerrySortInfo>> {
+  const cacheKey = "berry-sort-info-map";
+  const cached = getCached<Record<string, BerrySortInfo>>(cacheKey);
+  if (cached) return cached;
+
+  const berries = await getBerries();
+
+  const entries = await fetchInBatches(
+    berries.results,
+    async (berry: Berry) => {
+      const detail: BerryDetail = await fetch(berry.url).then((res) =>
+        res.json(),
+      );
+      const info: BerrySortInfo = {
+        growthTime: detail.growth_time,
+        size: detail.size,
+        firmnessRank: extractIdFromUrl(detail.firmness.url),
+      };
+      return [berry.name, info] as const;
+    },
+    20,
+  );
+
+  const map = Object.fromEntries(entries);
+  setCached(cacheKey, map);
+  return map;
+}
+
 async function sortBerries(
   berries: Berry[],
-  sortValue: string
+  sortValue: string,
 ): Promise<Berry[]> {
   switch (sortValue) {
     case "asc":
       return [...berries].sort((i, l) =>
-        i.name.localeCompare(l.name, "en", { sensitivity: "base" })
+        i.name.localeCompare(l.name, "en", { sensitivity: "base" }),
       );
     case "desc":
       return [...berries].sort((i, l) =>
-        l.name.localeCompare(i.name, "en", { sensitivity: "base" })
+        l.name.localeCompare(i.name, "en", { sensitivity: "base" }),
       );
+    case "id-asc":
+      return [...berries].sort(
+        (i, l) => extractIdFromUrl(i.url) - extractIdFromUrl(l.url),
+      );
+    case "id-desc":
+      return [...berries].sort(
+        (i, l) => extractIdFromUrl(l.url) - extractIdFromUrl(i.url),
+      );
+    case "growth-asc": {
+      const info = await getBerrySortInfoMap();
+      return [...berries].sort(
+        (i, l) =>
+          (info[i.name]?.growthTime ?? 0) - (info[l.name]?.growthTime ?? 0),
+      );
+    }
+    case "growth-desc": {
+      const info = await getBerrySortInfoMap();
+      return [...berries].sort(
+        (i, l) =>
+          (info[l.name]?.growthTime ?? 0) - (info[i.name]?.growthTime ?? 0),
+      );
+    }
+    case "size-asc": {
+      const info = await getBerrySortInfoMap();
+      return [...berries].sort(
+        (i, l) => (info[i.name]?.size ?? 0) - (info[l.name]?.size ?? 0),
+      );
+    }
+    case "size-desc": {
+      const info = await getBerrySortInfoMap();
+      return [...berries].sort(
+        (i, l) => (info[l.name]?.size ?? 0) - (info[i.name]?.size ?? 0),
+      );
+    }
+    case "firmness-asc": {
+      const info = await getBerrySortInfoMap();
+      return [...berries].sort(
+        (i, l) =>
+          (info[i.name]?.firmnessRank ?? 0) - (info[l.name]?.firmnessRank ?? 0),
+      );
+    }
+    case "firmness-desc": {
+      const info = await getBerrySortInfoMap();
+      return [...berries].sort(
+        (i, l) =>
+          (info[l.name]?.firmnessRank ?? 0) - (info[i.name]?.firmnessRank ?? 0),
+      );
+    }
     case "default":
-      return [...berries];
     default:
       return [...berries];
   }
@@ -65,7 +162,7 @@ async function sortBerries(
 async function getAllSortedBerries(
   sortValue: string,
   offset: number,
-  limit: number
+  limit: number,
 ): Promise<BerryResponse> {
   const berries = await getBerries();
   const sorted = await sortBerries(berries.results, sortValue);
@@ -82,7 +179,7 @@ async function getAllSortedBerries(
 
 async function getAllSuggestedBerries(
   query: string,
-  maxSuggestions: number = 10
+  maxSuggestions: number = 10,
 ): Promise<BerryResponse> {
   const berries = await getBerries();
   const berryNames = berries.results.map((berry: Berry) => berry.name);
@@ -90,7 +187,7 @@ async function getAllSuggestedBerries(
     .filter((name: string) => name.toLowerCase().includes(query.toLowerCase()))
     .slice(0, maxSuggestions);
   const results = await Promise.all(
-    matches.map((name: string) => getOneBerryByNameWithDetail(name))
+    matches.map((name: string) => getOneBerryByNameWithDetail(name)),
   );
 
   const response: BerryResponse = {
@@ -105,10 +202,10 @@ async function getAllSuggestedBerries(
 
 async function getOneBerryByNameWithDetail(name: string): Promise<Berry> {
   const berryDetail: BerryDetail = await fetch(
-    `https://pokeapi.co/api/v2/berry/${name}`
+    `https://pokeapi.co/api/v2/berry/${name}`,
   ).then((res) => res.json());
   const itemDetail: BerryItemDetail = await fetch(berryDetail.item.url).then(
-    (res) => res.json()
+    (res) => res.json(),
   );
 
   const result: Berry = {
@@ -146,10 +243,10 @@ async function getOneBerryByNameWithDetail(name: string): Promise<Berry> {
 
 async function getOneBerryWithDetail(target: Berry): Promise<Berry> {
   const berryDetail: BerryDetail = await fetch(target.url).then((res) =>
-    res.json()
+    res.json(),
   );
   const itemDetail: BerryItemDetail = await fetch(berryDetail.item.url).then(
-    (res) => res.json()
+    (res) => res.json(),
   );
 
   const result: Berry = {
@@ -204,15 +301,15 @@ export default function BerryContent() {
         const data = query
           ? await getAllSuggestedBerries(query)
           : sort
-          ? await getAllSortedBerries(sort, offset, limit)
-          : await getAllBerries(offset, limit);
+            ? await getAllSortedBerries(sort, offset, limit)
+            : await getAllBerries(offset, limit);
 
         if (query && data.count < 1) {
           throw new Error(`Berry like '${query}' not found.`);
         }
 
         const results = await Promise.all(
-          data.results.map(getOneBerryWithDetail)
+          data.results.map(getOneBerryWithDetail),
         );
 
         setCount(data.count);
@@ -224,7 +321,7 @@ export default function BerryContent() {
         });
       } catch (error) {
         setError(
-          error instanceof Error ? error.message : "An unknown error occurred."
+          error instanceof Error ? error.message : "An unknown error occurred.",
         );
       }
     }
@@ -264,7 +361,7 @@ export default function BerryContent() {
 
             <div className="flex flex-row space-x-4 items-center">
               {/* SORT BUTTON */}
-              <SortButton />
+              <SortButton options={BERRY_SORT_OPTIONS} />
 
               {/* CATEGORY BUTTON */}
               <CategoryButton />

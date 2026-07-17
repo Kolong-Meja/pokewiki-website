@@ -1,3 +1,9 @@
+export type PokemonGenerationInfo = {
+  generationName: string;
+  regionName: string;
+  order: number;
+};
+
 export type PokemonResponse = {
   count: number;
   next: string | null;
@@ -27,7 +33,7 @@ export type EnrichedPokemon = Pokemon & {
 
 export type PokemonWithTotalStats = Pokemon & {
   totalStats: number;
-}
+};
 
 export type PokemonStats = {
   base_stat: number;
@@ -86,4 +92,3 @@ type PokemonSprites = {
   front_default: string | null;
   front_female: string | null;
 };
-

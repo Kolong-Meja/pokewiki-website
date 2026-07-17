@@ -1,3 +1,9 @@
+export type BerrySortInfo = {
+  growthTime: number;
+  size: number;
+  firmnessRank: number;
+};
+
 export type BerryResponse = {
   count: number;
   next: string | null;

@@ -9,12 +9,32 @@ import {
   PokemonResponse,
   PokemonStats,
   PokemonWithTotalStats,
+  PokemonGenerationInfo,
 } from "@/types/pokemon";
+import { SortOption } from "@/types/sort";
+import {
+  extractIdFromUrl,
+  fetchInBatches,
+  getCached,
+  setCached,
+} from "@/utils/sort";
 import SearchBar from "../SearchBar";
 import PokemonTable from "../tables/PokemonTable";
 import SortButton from "../buttons/SortButton";
 import SimplePagination from "../SimplePagination";
 import CategoryButton from "../buttons/CategoryButton";
+
+const POKEMON_SORT_OPTIONS: SortOption[] = [
+  { value: "default", label: "Sort by Default" },
+  { value: "asc", label: "[ A-Z ] Sort by Name" },
+  { value: "desc", label: "[ Z-A ] Sort by Name" },
+  { value: "id-asc", label: "[ Low-High ] Sort by Pokédex No." },
+  { value: "id-desc", label: "[ High-Low ] Sort by Pokédex No." },
+  { value: "power-desc", label: "[ Strongest ] Sort by Total Stats" },
+  { value: "power-asc", label: "[ Weakest ] Sort by Total Stats" },
+  { value: "generation-asc", label: "[ Oldest-Newest ] Sort by Generation" },
+  { value: "generation-desc", label: "[ Newest-Oldest ] Sort by Generation" },
+];
 
 async function getPokemons(): Promise<PokemonResponse> {
   let pokemons;
@@ -22,7 +42,7 @@ async function getPokemons(): Promise<PokemonResponse> {
 
   if (!cachedPokemons) {
     const response = await fetch(
-      "https://pokeapi.co/api/v2/pokemon?limit=1302"
+      "https://pokeapi.co/api/v2/pokemon?limit=1302",
     );
     if (!response.ok) throw new Error("Failed to fetch pokemons.");
 
@@ -37,10 +57,10 @@ async function getPokemons(): Promise<PokemonResponse> {
 
 async function getAllPokemons(
   offset: number,
-  limit: number
+  limit: number,
 ): Promise<PokemonResponse> {
   const response = await fetch(
-    `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`
+    `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`,
   );
   if (!response.ok) throw new Error("Failed to fetch pokemons.");
   const data = await response.json();
@@ -48,49 +68,127 @@ async function getAllPokemons(
   return data;
 }
 
+async function getPokemonStatsMap(): Promise<Record<string, number>> {
+  const cacheKey = "pokemon-stats-map";
+  const cached = getCached<Record<string, number>>(cacheKey);
+  if (cached) return cached;
+
+  const pokemons = await getPokemons();
+  const entries = await fetchInBatches(
+    pokemons.results,
+    async (pokemon: Pokemon) => {
+      const detail: PokemonDetail = await fetch(pokemon.url).then((res) =>
+        res.json(),
+      );
+      const total = detail.stats.reduce((sum, stat) => sum + stat.base_stat, 0);
+      return [pokemon.name, total] as const;
+    },
+    50,
+  );
+
+  const map = Object.fromEntries(entries);
+  setCached(cacheKey, map);
+  return map;
+}
+
+async function getPokemonGenerationMap(): Promise<
+  Record<string, PokemonGenerationInfo>
+> {
+  const cacheKey = "pokemon-generation-map";
+  const cached = getCached<Record<string, PokemonGenerationInfo>>(cacheKey);
+  if (cached) return cached;
+
+  const generationList: { results: { name: string; url: string }[] } =
+    await fetch("https://pokeapi.co/api/v2/generation").then((res) =>
+      res.json(),
+    );
+
+  const map: Record<string, PokemonGenerationInfo> = {};
+
+  await fetchInBatches(
+    generationList.results,
+    async (generation) => {
+      const detail: {
+        main_region: { name: string };
+        pokemon_species: { name: string }[];
+      } = await fetch(generation.url).then((res) => res.json());
+
+      const order = extractIdFromUrl(generation.url);
+
+      for (const species of detail.pokemon_species) {
+        map[species.name] = {
+          generationName: generation.name,
+          regionName: detail.main_region.name,
+          order,
+        };
+      }
+    },
+    10,
+  );
+
+  setCached(cacheKey, map);
+  return map;
+}
+
 async function sortPokemons(
   pokemons: PokemonWithTotalStats[],
-  sortValue: string
+  sortValue: string,
 ): Promise<PokemonWithTotalStats[]> {
   switch (sortValue) {
     case "asc":
       return [...pokemons].sort((a, b) =>
-        a.name.localeCompare(b.name, "en", { sensitivity: "base" })
+        a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
       );
     case "desc":
       return [...pokemons].sort((a, b) =>
-        b.name.localeCompare(a.name, "en", { sensitivity: "base" })
+        b.name.localeCompare(a.name, "en", { sensitivity: "base" }),
       );
-    case "powerful":
+    case "id-asc":
       return [...pokemons].sort(
-        (a, b) => (b.totalStats ?? 0) - (a.totalStats ?? 0)
+        (a, b) => extractIdFromUrl(a.url) - extractIdFromUrl(b.url),
       );
-    case "weakest":
+    case "id-desc":
       return [...pokemons].sort(
-        (a, b) => (a.totalStats ?? 0) - (b.totalStats ?? 0)
+        (a, b) => extractIdFromUrl(b.url) - extractIdFromUrl(a.url),
       );
+    case "power-asc": {
+      const stats = await getPokemonStatsMap();
+      return [...pokemons].sort(
+        (a, b) => (stats[a.name] ?? 0) - (stats[b.name] ?? 0),
+      );
+    }
+    case "power-desc": {
+      const stats = await getPokemonStatsMap();
+      return [...pokemons].sort(
+        (a, b) => (stats[b.name] ?? 0) - (stats[a.name] ?? 0),
+      );
+    }
+    case "generation-asc": {
+      const generations = await getPokemonGenerationMap();
+      return [...pokemons].sort(
+        (a, b) =>
+          (generations[a.name]?.order ?? Number.MAX_SAFE_INTEGER) -
+          (generations[b.name]?.order ?? Number.MAX_SAFE_INTEGER),
+      );
+    }
+    case "generation-desc": {
+      const generations = await getPokemonGenerationMap();
+      return [...pokemons].sort(
+        (a, b) =>
+          (generations[b.name]?.order ?? -1) -
+          (generations[a.name]?.order ?? -1),
+      );
+    }
     case "default":
-      return [...pokemons];
     default:
       return [...pokemons];
   }
 }
 
-// case "region":
-//   return [...pokemons].sort((a, b) => {
-//     const initialRegion = a.detail?.species.detail?.generation.detail
-//       ?.main_region.name as string;
-//     const nextRegion = b.detail?.species.detail?.generation.detail
-//       ?.main_region.name as string;
-//     return initialRegion?.localeCompare(nextRegion, "en", {
-//       sensitivity: "base",
-//     });
-//   });
-
 async function getAllSortedPokemons(
   sortValue: string,
   offset: number,
-  limit: number
+  limit: number,
 ): Promise<PokemonResponse> {
   const pokemons = await getPokemons();
   const sorted = await sortPokemons(pokemons.results, sortValue);
@@ -107,7 +205,7 @@ async function getAllSortedPokemons(
 
 async function getAllSuggestedPokemons(
   query: string,
-  maxSuggestions: number = 10
+  maxSuggestions: number = 10,
 ): Promise<PokemonResponse> {
   const pokemons = await getPokemons();
   const pokemonNames = pokemons.results.map((pokemon: Pokemon) => pokemon.name);
@@ -115,7 +213,7 @@ async function getAllSuggestedPokemons(
     .filter((name: string) => name.toLowerCase().includes(query.toLowerCase()))
     .slice(0, maxSuggestions);
   const results = await Promise.all(
-    matches.map((name: string) => getOnePokemonByNameWithDetail(name))
+    matches.map((name: string) => getOnePokemonByNameWithDetail(name)),
   );
 
   const response: PokemonResponse = {
@@ -128,19 +226,21 @@ async function getAllSuggestedPokemons(
   return response;
 }
 
-async function getOnePokemonByNameWithDetail(name: string): Promise<PokemonWithTotalStats> {
+async function getOnePokemonByNameWithDetail(
+  name: string,
+): Promise<PokemonWithTotalStats> {
   const pokemonDetail: PokemonDetail = await fetch(
-    `https://pokeapi.co/api/v2/pokemon/${name}`
+    `https://pokeapi.co/api/v2/pokemon/${name}`,
   ).then((res) => res.json());
   const species = await fetch(pokemonDetail.species.url).then((res) =>
-    res.json()
+    res.json(),
   );
   const generation = await fetch(species.generation.url).then((res) =>
-    res.json()
+    res.json(),
   );
   const totalStat = pokemonDetail.stats.reduce(
     (sum: number, stat: PokemonStats) => sum + stat.base_stat,
-    0
+    0,
   );
 
   return {
@@ -176,20 +276,20 @@ async function getOnePokemonByNameWithDetail(name: string): Promise<PokemonWithT
 }
 
 async function getOnePokemonWithDetail(
-  target: Pokemon
+  target: Pokemon,
 ): Promise<PokemonWithTotalStats> {
   const pokemonDetail: PokemonDetail = await fetch(target.url).then((res) =>
-    res.json()
+    res.json(),
   );
   const species = await fetch(pokemonDetail.species.url).then((res) =>
-    res.json()
+    res.json(),
   );
   const generation = await fetch(species.generation.url).then((res) =>
-    res.json()
+    res.json(),
   );
   const totalStat = pokemonDetail.stats.reduce(
     (sum: number, stat: PokemonStats) => sum + stat.base_stat,
-    0
+    0,
   );
 
   return {
@@ -243,15 +343,15 @@ export default function PokemonContent() {
         const data = query
           ? await getAllSuggestedPokemons(query)
           : sort
-          ? await getAllSortedPokemons(sort, offset, limit)
-          : await getAllPokemons(offset, limit);
+            ? await getAllSortedPokemons(sort, offset, limit)
+            : await getAllPokemons(offset, limit);
 
         if (query && data.count < 1) {
           throw new Error(`Pokemon like '${query}' not found.`);
         }
 
         const results = await Promise.all(
-          data.results.map(getOnePokemonWithDetail)
+          data.results.map(getOnePokemonWithDetail),
         );
 
         setCount(data.count);
@@ -263,7 +363,7 @@ export default function PokemonContent() {
         });
       } catch (error) {
         setError(
-          error instanceof Error ? error.message : "An unknown error occurred."
+          error instanceof Error ? error.message : "An unknown error occurred.",
         );
       }
     }
@@ -303,7 +403,7 @@ export default function PokemonContent() {
 
             <div className="flex flex-row space-x-4 items-center">
               {/* SORT BUTTON */}
-              <SortButton />
+              <SortButton options={POKEMON_SORT_OPTIONS} />
 
               {/* CATEGORY BUTTON */}
               <CategoryButton />

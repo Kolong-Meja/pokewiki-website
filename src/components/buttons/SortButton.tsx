@@ -1,7 +1,22 @@
+"use client";
+
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { SortOption } from "@/types/sort";
 
-export default function SortButton() {
+const DEFAULT_SORT_OPTIONS: SortOption[] = [
+  { value: "default", label: "Sort by Default" },
+  { value: "asc", label: "[ A-Z ] Sort by Name" },
+  { value: "desc", label: "[ Z-A ] Sort by Name" },
+];
+
+type SortButtonProps = {
+  options?: SortOption[];
+};
+
+export default function SortButton({
+  options = DEFAULT_SORT_OPTIONS,
+}: SortButtonProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -65,8 +80,7 @@ export default function SortButton() {
       {dropdownOpen && (
         <div
           ref={dropdownMenuRef}
-          className="origin-top-right absolute right-0 mt-2 w-44 rounded-md bg-soft-dark border border-zinc-700 z-20
-          "
+          className="origin-top-right absolute right-0 mt-2 w-64 max-h-72 overflow-y-auto rounded-md bg-soft-dark border border-zinc-700 z-20"
         >
           <div
             className="py-2 p-2"
@@ -74,27 +88,16 @@ export default function SortButton() {
             aria-orientation="vertical"
             aria-labelledby="dropdown-button"
           >
-            <a
-              onClick={() => sortData("default")}
-              className="flex rounded-md px-3 py-2 text-sm text-gray-50 dark:text-white hover:bg-zinc-800 active:bg-zinc-600 transition-colors duration-300 ease-in-out cursor-pointer"
-              role="menuitem"
-            >
-              Sort by Default
-            </a>
-            <a
-              onClick={() => sortData("asc")}
-              className="flex rounded-md px-3 py-2 text-sm text-gray-50 dark:text-white hover:bg-zinc-800 active:bg-zinc-600 transition-colors duration-300 ease-in-out cursor-pointer"
-              role="menuitem"
-            >
-              [ A-Z ] Sort by Name
-            </a>
-            <a
-              onClick={() => sortData("desc")}
-              className="flex rounded-md px-3 py-2 text-sm text-gray-50 dark:text-white hover:bg-zinc-800 active:bg-zinc-600 transition-colors duration-300 ease-in-out cursor-pointer"
-              role="menuitem"
-            >
-              [ Z-A ] Sort by Name
-            </a>
+            {options.map((option) => (
+              <a
+                key={option.value}
+                onClick={() => sortData(option.value)}
+                className="flex rounded-md px-3 py-2 text-sm text-gray-50 dark:text-white hover:bg-zinc-800 active:bg-zinc-600 transition-colors duration-300 ease-in-out cursor-pointer"
+                role="menuitem"
+              >
+                {option.label}
+              </a>
+            ))}
           </div>
         </div>
       )}
